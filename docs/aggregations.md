@@ -78,7 +78,7 @@ python3 -m aggregations.aggregate_annotations_plurality \
 
 ## Add Subject Data to Aggregations
 
-This scripts adds subject data to the export to join it later for report generation.
+This script adds subject data to the export to join it later for report generation.
 
 ```
 python3 -m zooniverse_exports.merge_csvs \
