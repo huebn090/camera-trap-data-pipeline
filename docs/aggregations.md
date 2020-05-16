@@ -76,7 +76,7 @@ python3 -m aggregations.aggregate_annotations_plurality \
 --log_filename ${SEASON}_aggregate_annotations_plurality_survey
 ```
 
-## Add subject data to Aggregations
+## Add Subject Data to Aggregations
 
 This scripts adds subject data to the export to join it later for report generation.
 
@@ -87,7 +87,7 @@ python3 -m zooniverse_exports.merge_csvs \
 --output_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality.csv \
 --key subject_id
 
-# By workflow only
+#By workflow only
 
 python3 -m zooniverse_exports.merge_csvs \
 --base_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_raw_survey.csv \
