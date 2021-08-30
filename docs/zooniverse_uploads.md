@@ -9,21 +9,26 @@ The following steps are required to upload new data to Zooniverse. The following
 
 The optional steps can simply be skipped.
 
-For most scripts we use the following ressources (unless indicated otherwise):
+For most scripts we use the following resources (unless indicated otherwise):
 ```
-ssh lab
-qsub -I -l walltime=12:00:00,nodes=1:ppn=4,mem=16gb
+ssh mesabi
+srun -N 1 --ntasks-per-node=4  --mem-per-cpu=8gb -t 2:00:00 -p interactive --pty bash
 module load python3
 cd ~/camera-trap-data-pipeline
 ```
+Zooniverse occasionally updates the Panoptes client which controls uploads. Be sure to run this code after any notifications from Zooniverse
+about updates to Panoptes:
+pip install -U --user panoptescli
+pip install -U --user panoptes-client
+ *Add '--user' to code provided by Zooniverse in order to run it on MSI.*
 
-The following examples were run with the following parameters:
 ```
-SITE=RUA
-SEASON=RUA_S1
-PROJECT_ID=5155
-ATTRIBUTION='University of Minnesota Lion Center + SnapshotSafari + Ruaha Carnivore Project + Tanzania + Ruaha National Park'
-LICENSE='SnapshotSafari + Ruaha Carnivore Project'
+The following examples were run with the following parameters:
+SITE=SER
+SEASON=SER_S15F
+PROJECT_ID=4996
+ATTRIBUTION='University of Minnesota Lion Center + Wake Forest University + Snapshot Serengeti + Snapshot Safari + Serengeti National Park + Tanzania'
+LICENSE='Snapshot Safari + University of Minnesota Lion Center + Wake Forest University'
 ```
 
 Make sure to create the following folders:
@@ -101,10 +106,6 @@ python3 -m zooniverse_uploads.add_predictions_to_manifest \
 ```
 
 Note: If the script is 'killed' the most likely reason is memory usage. In that case use this command to launch a session with more memory and try again:
-
-```
-qsub -I -l walltime=01:00:00,nodes=1:ppn=4,mem=16gb
-module load python3
 ```
 
 ## Split/Batch Manifest (Optional)
@@ -117,7 +118,7 @@ python3 -m zooniverse_uploads.split_manifest_into_batches \
 --manifest /home/packerc/shared/zooniverse/Manifests/${SITE}/${SEASON}__complete__manifest.json \
 --log_dir /home/packerc/shared/zooniverse/Manifests/${SITE}/log_files/ \
 --log_filename ${SEASON}_split_manifest_into_batches \
---max_batch_size 20000
+--max_batch_size 50000
 ```
 
 This creates the following files:
@@ -137,16 +138,16 @@ This code uploads a manifest to Zooniverse. Note that Zooniverse credentials hav
 
 Define the parameters:
 ```
-SITE=RUA
-SEASON=RUA_S1
-PROJECT_ID=5155
-BATCH=complete
+SITE=SER
+SEASON=SER_S15C
+PROJECT_ID=4996
+BATCH=batch_2
 ```
 
 Change the paths analogue to this example:
 ```
 python3 -m zooniverse_uploads.upload_manifest \
---manifest /home/packerc/shared/zooniverse/Manifests/${SITE}/${SEASON}__${BATCH}__manifest.json \
+--manifest /home/packerc/shared/zooniverse/Manifests/${SITE}/${SEASON}${BATCH}__complete__manifest.json \
 --log_dir /home/packerc/shared/zooniverse/Manifests/${SITE}/log_files/ \
 --log_filename ${SEASON}_upload_manifest \
 --project_id ${PROJECT_ID} \
@@ -156,52 +157,60 @@ python3 -m zooniverse_uploads.upload_manifest \
 
 To upload a specific batch instead use:
 ```
-BATCH=batch_1
+BATCH=batch_2
 ```
 
 ### Run via qsub (if not via Terminal) - Recommended if connection issues
 
 Run the script in the following way:
 ```
-ssh lab
+ssh mangi
 cd $HOME/camera-trap-data-pipeline/zooniverse_uploads/
 
-SITE=RUA
-SEASON=RUA_S1
-PROJECT_ID=5155
-BATCH=batch_0
+SITE=SER
+SEASON=SER_S15F
+PROJECT_ID=4996
+BATCH=complete
 
-qsub -v SITE=${SITE},SEASON=${SEASON},PROJECT_ID=${PROJECT_ID},BATCH=${BATCH} upload_manifest.pbs
+sbatch --export=SITE=${SITE},SEASON=${SEASON},PROJECT_ID=${PROJECT_ID},BATCH=${BATCH} upload_manifest.sh
 ```
+
 
 ### In case of a failure
 
 If the upload fails (which can happen if the connection to Zooniverse crashes) you can add the missing subjects to the already (partially) uploaded set by specifying the SUBJECT_SET_ID of the already created set. DO NOT specify the parameter '-subject_set_name', instead use '-subject_set_id' and use the id on the 'Subject Sets' page after clicking on the name of the set of your project on Zooniverse.
 
 Change the paths analogue to this example:
+
+SITE=SER
+SEASON=SER_S15A
+PROJECT_ID=4996
+SUBJECT_SET_ID=97411
+BATCH=complete
 ```
 python3 -m zooniverse_uploads.upload_manifest \
---manifest /home/packerc/shared/zooniverse/Manifests/${SITE}/${SEASON}__complete__manifest.json \
+--manifest /home/packerc/shared/zooniverse/Manifests/${SITE}/${SEASON}__${BATCH}__manifest.json \
 --log_dir /home/packerc/shared/zooniverse/Manifests/${SITE}/log_files/ \
 --log_filename ${SEASON}_upload_manifest \
 --project_id ${PROJECT_ID} \
---subject_set_id 7845 \
+--subject_set_id ${SUBJECT_SET_ID} \
 --image_root_path /home/packerc/shared/albums/${SITE}/ \
 --password_file ~/keys/passwords.ini
 ```
 
 Alternatively, use the qsub system:
 ```
-ssh lab
+ssh mangi
 cd $HOME/camera-trap-data-pipeline/zooniverse_uploads/
 
-SITE=RUA
-SEASON=RUA_S1
-PROJECT_ID=5155
-BATCH=batch_0
-SUBJECT_SET_ID=7845
+SITE=GRU
+SEASON=GRU_S2E
+PROJECT_ID=5115
+BATCH=batch_5
 
-qsub -v SITE=${SITE},SEASON=${SEASON},PROJECT_ID=${PROJECT_ID},BATCH=${BATCH},SUBJECT_SET_ID=${SUBJECT_SET_ID} upload_manifest.pbs
+
+
+sbatch --export=SITE=${SITE},SEASON=${SEASON},PROJECT_ID=${PROJECT_ID},BATCH=${BATCH},SUBJECT_SET_ID=${SUBJECT_SET_ID} upload_manifest.sh
 ```
 
 ### Notes
@@ -243,3 +252,22 @@ Or disable image compression with:
 ```
 --dont_compress_images
 ```
+
+#### Delete subjects after upload to Zooniverse
+
+If a capture needs to be removed, run one of the following options with the Zooniverse subject number:
+
+Python Client (project owner)
+s = Subject.find(44781412)
+s.delete()
+
+In the future you can also use the CLI:
+panoptes subject delete 44781412
+
+Either way, take care with these `delete` actions -- once they're gone, they're gone.  You can give these commands a try on your own in the future, or we're happy to assist via a contact email.
+?
+For reference: another choices would be to remove the subject from its subject set(s):
+panoptes subject-set remove-subjects <SubjectSetID> <SubjectID>
+
+### Link particular subject set to workflow
+$ panoptes workflow ls -p 593

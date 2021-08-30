@@ -8,17 +8,16 @@ The following codes can be used to:
 
 For most scripts we use the following ressources (unless indicated otherwise):
 ```
-ssh lab
-qsub -I -l walltime=02:00:00,nodes=1:ppn=4,mem=16gb
+srun -N 1 --ntasks-per-node=4  --mem-per-cpu=8gb -t 2:00:00 -p interactive --pty bash
 module load python3
 cd ~/camera-trap-data-pipeline
 ```
 
 The following examples were run with the following parameters:
 ```
-SITE=RUA
-SEASON=RUA_S1
-PROJECT_ID=5155
+SITE=GRU
+SEASON=GRU_S2
+PROJECT_ID=5115
 ```
 
 ## Get Zooniverse Exports
@@ -90,7 +89,7 @@ The following code extracts the relevant fields of a Zooniverse classification e
 Use a machine with enough memory - for example:
 
 ```
-ssh lab
+ssh mangi
 qsub -I -l walltime=2:00:00,nodes=1:ppn=4,mem=16gb
 ```
 
@@ -107,16 +106,23 @@ python3 -m zooniverse_exports.extract_annotations \
 --log_filename ${SEASON}_extract_annotations
 ```
 
+# Run annotations twice for batches of data processed with integrated AI--first by season, then by workflow ID as below. 
+Be sure to specify the workflow and version, and change workflow annotations to annotations_survey.csv.#
 
-### Option 2) Filtering Classifications by Worfklow-ID
 
-The workflow_id and the workflow_version can be specified to extract only the workflow the relevant workflow of a project. If neither workflow_id/worfklow_version_min are specified every workflow is extracted. The workflow_id can be found in the project builder when clicking on the workflow. The workflow version is at the same place slightly further down (e.g. something like 745.34). Be aware that only the 'major' version number is compared against, e.g., workflow version '45.23' is identical to '45.56'. To extract specific workflow versions we can specify a minimum version 'workflow_version_min' in which case all classifications with the same or higher number are extracted. A summary of all extracted workflows and other stats is printed after the extraction.
+### Option 2) Filtering Classifications by Workflow-ID
+
+The workflow_id and the workflow_version can be specified to extract only the workflow the relevant workflow of a project. If neither workflow_id/worfklow_version_min are specified every workflow is extracted. 
+The workflow_id can be found in the project builder when clicking on the workflow. The workflow version is at the same place slightly further down (e.g. something like 745.34). 
+Be aware that only the 'major' version number is compared against, e.g., workflow version '45.23' is identical to '45.56'. To extract specific workflow versions we can specify a minimum version 'workflow_version_min' in which case all classifications with the same or higher number are extracted. A summary of all extracted workflows and other stats is printed after the extraction.
 
 If WORKFLOW_ID / WORKFLOW_VERSION_MIN are unknown run the script like this:
 ```
 python3 -m zooniverse_exports.extract_annotations \
 --classification_csv /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_classifications.csv \
 --output_csv /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_annotations.csv
+
+# Alternatively, this information can be found on the extract_annotations.log file within zooniverse/Exports on MSI once the previous script finishes running.# 
 ```
 
 Then investigate the output of the script in the terminal to determine which workflows to use and then re-run the code with the specified workflows. Example output:
@@ -133,19 +139,20 @@ INFO:Workflow id: 4655    Workflow version: 363.25     -- counts: 842646
 
 In that case we would choose 'WORKFLOW_ID=4655' and 'WORKFLOW_VERSION_MIN=304.23' since this seems to be the 'real' start of the season with many annotations. Later changes hopefully were only minor.
 
-```
-WORKFLOW_ID=4655
-WORKFLOW_VERSION_MIN=304.23
+WORKFLOW_ID=4979
+WORKFLOW_VERSION_MIN=249.2
+
 ```
 
+### Extract annotations from workflow only ###
 ```
 python3 -m zooniverse_exports.extract_annotations \
 --classification_csv /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_classifications.csv \
---output_csv /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_annotations.csv \
+--output_csv /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_annotations_survey.csv \
 --workflow_id $WORKFLOW_ID \
 --workflow_version_min $WORKFLOW_VERSION_MIN \
 --log_dir /home/packerc/shared/zooniverse/Exports/${SITE}/log_files/ \
---log_filename ${SEASON}_extract_annotations
+--log_filename ${SEASON}_extract_annotations_survey
 ```
 
 
@@ -154,14 +161,14 @@ python3 -m zooniverse_exports.extract_annotations \
 If is is known when the project went live a start-date can be specified such that no classifications made prior to that date are being extracted. There is also the option to specify an end-date: no classification made past that date will be extracted. It is possible to specify only one of the dates. Note: The dates are compared against UTC time.
 
 ```
-EARLIEST_DATE=2000-01-01
-LAST_DATE=2099-01-01
+EARLIEST_DATE=2020-11-23
+LAST_DATE=2021-04-10
 ```
 
 ```
 python3 -m zooniverse_exports.extract_annotations \
 --classification_csv /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_classifications.csv \
---output_csv /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_annotations.csv \
+--output_csv /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_annotations_date.csv \
 --no_earlier_than_date $EARLIEST_DATE \
 --no_later_than_date $LAST_DATE \
 --log_dir /home/packerc/shared/zooniverse/Exports/${SITE}/log_files/ \

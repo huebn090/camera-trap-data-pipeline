@@ -3,16 +3,15 @@
 The following codes can be used to generate predictions for season captures.
 
 ```
-ssh lab
-qsub -I -l walltime=02:00:00,nodes=1:ppn=4,mem=16gb
+srun -N 1 --ntasks-per-node=4  --mem-per-cpu=16gb -t 2:00:00 -p interactive --pty bash
 module load python3
 cd ~/camera-trap-data-pipeline
 ```
-
+cd
 The following examples were run with the following parameters:
 ```
-SITE=SER
-SEASON=SER_S1
+SITE=GRU
+SEASON=GRU_S3B
 ```
 
 Make sure to create the following folders:
@@ -35,25 +34,21 @@ python3 -m machine_learning.create_machine_learning_file \
 --log_filename ${SEASON}_create_machine_learning_file
 ```
 
-
 ## Create Predictions
 
 ### Define the Parameters
 
 Run / Define the following commands / parameters:
 ```
-ssh mesabi
+ssh mangi
 cd $HOME/camera-trap-data-pipeline/machine_learning/jobs/
 
 SITE=SER
-SEASON=SER_S1
+SEASON=SER_S15E
 
 INPUT_FILE=/home/packerc/shared/zooniverse/MachineLearning/${SITE}/${SEASON}_machine_learning_input.csv
-
 OUTPUT_FILE_EMPTY=/home/packerc/shared/zooniverse/MachineLearning/${SITE}/${SEASON}_predictions_empty_or_not.json
-
 OUTPUT_FILE_SPECIES=/home/packerc/shared/zooniverse/MachineLearning/${SITE}/${SEASON}_predictions_species.json
-
 IMAGES_ROOT=/home/packerc/shared/albums/${SITE}/
 ```
 
@@ -63,24 +58,26 @@ Both of the following commands can be run in parallel.
 
 To run the 'Empty or Not' model execute the following command:
 ```
-qsub -v INPUT_FILE=${INPUT_FILE},OUTPUT_FILE=${OUTPUT_FILE_EMPTY},IMAGES_ROOT=${IMAGES_ROOT} ctc_predict_empty_file.pbs
+sbatch --export=${SITE},${SEASON},INPUT_FILE=${INPUT_FILE},OUTPUT_FILE=${OUTPUT_FILE_EMPTY},IMAGES_ROOT=${IMAGES_ROOT} ctc_predict_empty_file.sh
 ```
 
 To run the 'Species' model execute the following command:
 ```
-qsub -v INPUT_FILE=${INPUT_FILE},OUTPUT_FILE=${OUTPUT_FILE_SPECIES},IMAGES_ROOT=${IMAGES_ROOT} ctc_predict_species_file.pbs
+sbatch --export=${SITE},${SEASON},INPUT_FILE=${INPUT_FILE},OUTPUT_FILE=${OUTPUT_FILE_SPECIES},IMAGES_ROOT=${IMAGES_ROOT} ctc_predict_species_file.sh
 ```
 
 NOTE: The script has a walltime of 36h. This was enough to calculate predictions for 187k captures. Should significantly more predictions be required increase the walltime paramter in the script accordingly.
 
 NOTE2: To use the faster GPU servers replace the name of the script in the following way:
 ```
-... ctc_predict_species_file_gpu.pbs
+... ctc_predict_species_file_gpu.sh
 ```
-
 ## Flatten ML Predictions (convert JSON to a CSV)
 
 Generate a csv with all machine learning predictions, one record per capture-id.
+Run this script in sbatch using commands_flatten_ml.sh and job_flatten_ml.sh. Change site and season in commands and resource request in job. 
+
+sbatch job_flatten_ml.sh
 
 ```
 # Create Flattened ML Predictions
@@ -92,7 +89,8 @@ python3 -m machine_learning.flatten_ml_predictions \
 --log_filename ${SEASON}_flatten_ml_predictions
 ```
 
-This script may require a lot of memory if the .json files are very large.
+This script may require a lot of memory if the .json files are very large. 
+srun -N 1 --ntasks-per-node=12  --mem-per-cpu=16gb -t 6:00:00 -p interactive --pty bash
 
 
 ## Reporting of Machine Learning Predictions

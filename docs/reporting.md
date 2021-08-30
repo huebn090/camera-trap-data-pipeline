@@ -12,8 +12,7 @@ The following codes show an example for Grumeti:
 
 For most scripts we use the following ressources (unless indicated otherwise):
 ```
-ssh lab
-qsub -I -l walltime=02:00:00,nodes=1:ppn=2,mem=8gb
+srun -N 1 --ntasks-per-node=4  --mem-per-cpu=8gb -t 2:00:00 -p interactive --pty bash
 module load python3
 cd ~/camera-trap-data-pipeline
 ```
@@ -21,7 +20,7 @@ cd ~/camera-trap-data-pipeline
 The following examples were run with the following parameters (non-legacy):
 ```
 SITE=GRU
-SEASON=GRU_S1
+SEASON=GRU_S2
 ```
 
 Make sure to create the following folders:
@@ -88,7 +87,7 @@ This report contains everything: blanks, consensus, non-consensus, captures with
 # Create Complete Report
 python3 -m reporting.create_zooniverse_report \
 --season_captures_csv /home/packerc/shared/season_captures/${SITE}/cleaned/${SEASON}_cleaned.csv \
---aggregated_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality.csv \
+--aggregated_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_date.csv \
 --output_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_complete.csv \
 --default_season_id ${SEASON} \
 --log_dir /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/log_files/ \
@@ -115,7 +114,7 @@ This report contains only consensus species identifications and a reduced number
 # Create Consensus Report
 python3 -m reporting.create_zooniverse_report \
 --season_captures_csv /home/packerc/shared/season_captures/${SITE}/cleaned/${SEASON}_cleaned.csv \
---aggregated_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality.csv \
+--aggregated_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_survey.csv \
 --output_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_consensus.csv \
 --log_dir /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/log_files/ \
 --log_filename ${SEASON}_create_zooniverse_report \
@@ -135,16 +134,60 @@ python3 -m reporting.create_report_stats \
 --output_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_consensus_overview.csv \
 --log_dir /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/log_files/ \
 --log_filename ${SEASON}_create_report_stats
+
+
+# Create Consensus Report for survey workflow only
+#First, run export and aggregations using workflow and version
+
+python3 -m reporting.create_zooniverse_report \
+--season_captures_csv /home/packerc/shared/season_captures/${SITE}/cleaned/${SEASON}_cleaned.csv \
+--aggregated_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_survey.csv \
+--output_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_consensus_survey.csv \
+--log_dir /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/log_files/ \
+--log_filename ${SEASON}_create_zooniverse_report \
+--default_season_id ${SEASON} \
+--exclude_blanks \
+--exclude_humans \
+--exclude_non_consensus \
+--exclude_captures_without_data \
+--exclude_zooniverse_cols \
+--exclude_additional_plurality_infos
+
+# Create statistics file for survey consensus
+python3 -m reporting.create_report_stats \
+--report_path /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_consensus_survey.csv \
+--output_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_consensus_survey_overview.csv \
+--log_dir /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/log_files/ \
+--log_filename ${SEASON}_create_report_stats
 ```
 
 ```
 # Create a small sample report
 python3 -m reporting.sample_report \
---report_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_consensus.csv \
---output_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_consensus_samples.csv \
---sample_size 300 \
+--report_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_complete.csv \
+--output_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_consensus_samples.csv \
+--sample_size 2000 \
 --log_dir /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/log_files/ \
 --log_filename ${SEASON}_sample_report
+```
+
+```
+#Samples for gold standard datasets
+python3 -m reporting.sample_report \
+--report_csv /home/packerc/shared/gold_standard/${SITE}/${SEASON}_consensus_mod.csv \
+--output_csv /home/packerc/shared/gold_standard/${SITE}/${SEASON}_GoldStandard_samples.csv \
+--sample_size 2000 \
+--log_dir /home/packerc/shared/gold_standard/${SITE}/log_files/ \
+--log_filename ${SEASON}_sample_report
+
+
+# Create statistics file for sample report
+python3 -m reporting.create_report_stats \
+--report_path /home/packerc/shared/gold_standard/${SITE}/${SEASON}_GoldStandard_samples.csv \
+--output_csv /home/packerc/shared/gold_standard/${SITE}/${SEASON}_GoldStandard_overview.csv \
+--log_dir /home/packerc/shared/gold_standard/${SITE}/log_files/ \
+--log_filename ${SEASON}_create_report_stats_GS
+
 ```
 
 ### Image Inventory (Optional)
@@ -171,8 +214,8 @@ If urls are available, it is possible to add them using the following code:
 ```
 python3 -m reporting.create_image_inventory \
 --season_captures_csv /home/packerc/shared/season_captures/${SITE}/cleaned/${SEASON}_cleaned.csv \
---report_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_consensus.csv \
---output_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_consensus_image_inventory.csv \
+--report_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_consensus_survey.csv \
+--output_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_MSI.csv \
 --add_url \
 --url_prefix https://s3.msi.umn.edu/snapshotsafari/${SITE} \
 --log_dir /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/log_files/ \
@@ -270,7 +313,7 @@ Note: Pre-requisite is that rclone was configured correctly to access the target
 Transfer Images to LILA via qsub:
 
 ```
-ssh lab
+ssh mangi
 cd $HOME/camera-trap-data-pipeline/reporting/jobs
 
 SITE=RUA

@@ -15,13 +15,13 @@ The following codes can be used to:
 The following examples were run with the following settings:
 
 ```
-ssh lab
-qsub -I -l walltime=6:00:00,nodes=1:ppn=4,mem=16gb
+ssh mesabi
+srun -N 1 --ntasks-per-node=1  --mem-per-cpu=8gb -t 4:00:00 -p interactive --pty bash
 module load python3
 cd $HOME/camera-trap-data-pipeline
 git pull
-SITE=APN
-SEASON=APN_S2
+SITE=SER
+SEASON=SER_S15E
 ```
 
 It is recommended to create the following directories:
@@ -109,13 +109,14 @@ python3 -m pre_processing.create_image_inventory \
 The following script performs some checks on the images. It opens each image to verify it's integrity and to perform pixel-based checks. The code is parallelized -- use the following options to make the most of the parallelization (it still takes roughly 1 hour per 60k images).
 
 ```
-ssh lab
-qsub -I -l walltime=4:00:00,nodes=1:ppn=16,mem=16gb
+ssh mangi
+srun -N 1 --ntasks-per-node=8  --mem-per-cpu=16gb -t 6:00:00 -p interactive --pty bash
+ --OR--
+srun -N 1 --ntasks-per-node=24  --mem-per-cpu=32gb -t 12:00:00 -p interactive --pty bash (large batches)
 module load python3
 cd $HOME/camera-trap-data-pipeline
-git pull
-SITE=APN
-SEASON=APN_S2
+SITE=LEC
+SEASON=LEC_S1
 ```
 
 Then run the code:
@@ -125,7 +126,7 @@ python3 -m pre_processing.basic_inventory_checks \
 --output_csv /home/packerc/shared/season_captures/${SITE}/inventory/${SEASON}_inventory.csv \
 --log_dir /home/packerc/shared/season_captures/${SITE}/log_files/ \
 --log_filename ${SEASON}_basic_inventory_checks \
---n_processes 16
+--n_processes 12
 ```
 
 To calculate correct file-creation dates the timezone can be specified. Default timezone is: 'Africa/Johannesburg'. This is mainly relevant if no EXIF data is available. In that case the file creation date will be used to determine image datetimes. To replace the timezone choose for example:
@@ -135,21 +136,22 @@ To calculate correct file-creation dates the timezone can be specified. Default 
 See: https://stackoverflow.com/questions/13866926/is-there-a-list-of-pytz-timezones
 Alternatively, change the default timezone in [config/cfg_default.yaml](../config/cfg_default.yaml).
 
-For processing very large datasets (>200k images) it is recommended to run the following script via job queue.
+For processing very large datasets (>200k images) it is recommended to run the following script via job queue via the code below. Update commands_basic_cleaning.sh with the appropriate 
+site and season before running. If necessary, change the job time and requested resources in job_basic_cleaning.sh. 
 
 ```
-ssh lab
+ssh mangi
 SITE=APN
 SEASON=APN_S2
-
 cd $HOME/camera-trap-data-pipeline/pre_processing
 
-qsub -v SITE=${SITE},SEASON=${SEASON} basic_inventory_checks.pbs
+sbatch job_basic_cleaning.sh
+
 ```
 
 Check the status of the job by:
 ```
-qstat
+squeue -u username
 ```
 
 
@@ -167,9 +169,27 @@ qstat
 
 ## Extract EXIF data
 
-The following script extracts EXIF data from all images.
+The following script extracts EXIF data from all images. If this is your first time running this script, you will need to install several different packages in order to run it on MSI. 
+ssh mesabi
+module load python3
+conda create -n python38 python=3.8
+conda activate python38
+source activate python38
+conda install pandas matplotlib numpy pyyaml
+conda install -c anaconda pytz
+conda install -c jmcmurray json
+
+# get python wrapper for exiftool
+cd
+git clone git://github.com/smarnach/pyexiftool.git
+cd pyexiftool
+python setup.py install
+
+Before running (only the EXIF script):
+source activate python38
 
 ```
+conda activate python388
 python3 -m pre_processing.extract_exif_data \
 --inventory /home/packerc/shared/season_captures/${SITE}/inventory/${SEASON}_inventory.csv \
 --update_inventory \
@@ -199,11 +219,12 @@ python3 -m pre_processing.extract_exif_data \
 The following script groups the images into capture events.
 
 ```
+conda deactivate python388
 python3 -m pre_processing.group_inventory_into_captures \
 --inventory /home/packerc/shared/season_captures/${SITE}/inventory/${SEASON}_inventory.csv \
 --output_csv /home/packerc/shared/season_captures/${SITE}/captures/${SEASON}_captures.csv \
---no_older_than_year 2017 \
---no_newer_than_year 2019 \
+--no_older_than_year 2016 \
+--no_newer_than_year 2021 \
 --log_dir /home/packerc/shared/season_captures/${SITE}/log_files/ \
 --log_filename ${SEASON}_group_inventory_into_captures
 ```
@@ -280,6 +301,17 @@ mark_datetime_uncertain | flag/mark images if datetime is uncertain (example: im
 
 WARNING: be careful in using the correct datetime format for the columns 'datetime_current' and 'datetime_new' (YYYY-MM-DD HH:MM:SS) when specifying timechanges. Opening the file in Excel may change this format.
 
+# If you need to open a CSV file in Excel without changing the date-time stamps, here's how to do it:
+
+Open a new Excel sheet, select the Data tab, then click 'From Text' in the Get External Data group.
+Browse to the CSV file and select 'Import'.
+In step 1 of the Import Wizard choose 'Delimited' as the original data type. Click 'Next'.
+In step 2 of the Import Wizard choose Comma as the delimiter (deselect the Tab check box) and click 'Next'.
+In step 3 of the Import Wizard, you tell Excel not to change your formats. With the first column in the Data Preview selected, scroll across to the last column and select it while holding the SHIFT key (all columns should now be selected).  Then select 'Text' as the Column Data Format and click 'Finish'. 
+Click OK to insert the data into cell A1.
+
+Do NOT use find and replace or the date-time stamp will be incorrect--type all corrections. #
+
 5. The following options allow for selecting images for actions:
 
 column(s) to specify | meaning
@@ -301,6 +333,7 @@ action_site	| action_roll | action_from_image |	action_to_image	| action_to_take
 
 6. For each row specify: 'action_to_take' and 'action_to_take_reason'
 7. For 'timechange' in 'action_to_take' specify 'datetime_current' and 'datetime_new'. This will apply the difference (!) between these two dates to all selected images. For example: 'datetime_current'='2000-01-01 00:00:00' and 'datetime_new'=2000-01-01 00:05:00 will shift the time by +5 minutes.
+
 8. All rows with 'action_to_take' equal 'inspect' must be resolved and replaced with values as specified above.
 9. Upload the modified csv and proceed.
 
