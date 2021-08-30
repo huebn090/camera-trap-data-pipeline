@@ -16,19 +16,18 @@ The general aggregation logic (plurality algorithm) is as follows:
 5. Export the full dataset including species without consensus, blanks, and additional information.
 
 
-For most scripts we use the following ressources (unless indicated otherwise):
+For most scripts we use the following resources (unless indicated otherwise):
 ```
-ssh mesabi
-qsub -I -l walltime=02:00:00,nodes=1:ppn=4,mem=8gb
+srun -N 1 --ntasks-per-node=4  --mem-per-cpu=8gb -t 2:00:00 -p interactive --pty bash
 module load python3
 cd ~/camera-trap-data-pipeline
 ```
 
 The following examples were run with the following parameters:
 ```
-SITE=RUA
-SEASON=RUA_S1
-WORKFLOW_ID=9010
+SITE=MTZ
+SEASON=MTZ_S3
+WORKFLOW_ID=4655
 ```
 
 Make sure to create the following folders:
@@ -69,11 +68,12 @@ python3 -m aggregations.aggregate_annotations_plurality \
 ```
 #By workflow only
 
+```
 python3 -m aggregations.aggregate_annotations_plurality \
---annotations /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_annotations_survey.csv \
---output_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_raw_survey.csv \
+--annotations /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_annotations_date.csv \
+--output_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_raw_date.csv \
 --log_dir /home/packerc/shared/zooniverse/Aggregations/${SITE}/log_files/ \
---log_filename ${SEASON}_aggregate_annotations_plurality_survey
+--log_filename ${SEASON}_aggregate_annotations_plurality_date
 ```
 
 ##Add Subject Data to Aggregations
@@ -86,13 +86,15 @@ python3 -m zooniverse_exports.merge_csvs \
 --to_add_csv /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_subjects_extracted.csv \
 --output_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality.csv \
 --key subject_id
+```
 
+```
 #By workflow only
 
 python3 -m zooniverse_exports.merge_csvs \
---base_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_raw_survey.csv \
+--base_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_raw_date.csv \
 --to_add_csv /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_subjects_extracted.csv \
---output_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_survey.csv \
+--output_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_date.csv \
 --key subject_id
 
 ```
