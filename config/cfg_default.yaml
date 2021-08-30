@@ -70,7 +70,7 @@ pre_processing_flags:
      # below 30 (default), an image is considered 'all_black' if at least
      # 0.8 (80%) are below that threshold
      all_black:
-       percent: 0.8
+       percent: 0.9
        thresh: 30
      # a 'white' pixel is defined as a pixel whose RGB values are all
      # above 200 (default), an image is considered 'all_white' if at least
