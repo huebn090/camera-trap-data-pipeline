@@ -4,6 +4,8 @@
     - multiprocessing
 """
 from PIL import Image
+from PIL import JpegImagePlugin
+JpegImagePlugin._getmp = lambda x: None
 import traceback
 from multiprocessing import Process, Manager
 import io
@@ -21,7 +23,7 @@ def aspect_preserving_max_side_resize(img, max_side):
 
 def save_and_compress_image(img, output_bytes, quality=None):
     """ Compress image object (only JPEG) """
-    if (quality is not None) and (img.format == 'JPEG'):
+    if (quality is not None):
         img.save(output_bytes, quality=quality, format="JPEG")
     else:
         img.save(output_bytes, format="JPEG")
