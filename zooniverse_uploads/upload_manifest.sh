@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 #SBATCH -A packerc
 #SBATCH --time=96:00:00
 #SBATCH --mail-type=ALL
@@ -6,7 +6,7 @@
 #SBATCH --mem=64GB
 #SBATCH --job-name=upload_manifest
 #SBATCH --mail-user=huebn090@umn.edu
-#SBATCH -p amdsmall 
+#SBATCH -p agsmall 
 
 module load python3
 cd $HOME/camera-trap-data-pipeline/

@@ -400,16 +400,7 @@ if __name__ == "__main__":
             capture_data = mani[capture_id]
 
             # Create subject - retry on connection issues
-            subject = retry(
-                create_subject,
-                attempts=MAX_RETRIES_PER_BATCH,
-                sleeptime=60,
-                retry_exceptions=(OSError, PanoptesAPIException),
-                cleanup=connect_to_panoptes,
-                args=(capture_id,
-                      capture_data,
-                      args),
-                log_args=False,)
+            subject = create_subject(capture_id, capture_data, args)
 
             if subject is None:
                 logger.warning(
