@@ -15,13 +15,12 @@ The following codes can be used to:
 The following examples were run with the following settings:
 
 ```
-ssh mesabi
-srun -N 1 --ntasks-per-node=1  --mem-per-cpu=8gb -t 4:00:00 -p interactive --pty bash
+srun -N 1 --mem=64gb -t 8:00:00 -p interactive --pty bash
 module load python3
 cd $HOME/camera-trap-data-pipeline
 git pull
-SITE=SER
-SEASON=SER_S15E
+SITE=EFA
+SEASON=EFA_S1B1
 ```
 
 It is recommended to create the following directories:
@@ -106,17 +105,14 @@ python3 -m pre_processing.create_image_inventory \
 
 ## Create Image Inventory with Checks
 
-The following script performs some checks on the images. It opens each image to verify it's integrity and to perform pixel-based checks. The code is parallelized -- use the following options to make the most of the parallelization (it still takes roughly 1 hour per 60k images).
+The following script performs some checks on the images. It opens each image to verify its integrity and to perform pixel-based checks. The code is parallelized -- use the following options to make the most of the parallelization (it still takes roughly 1 hour per 60k images).
 
 ```
-ssh mangi
-srun -N 1 --ntasks-per-node=8  --mem-per-cpu=16gb -t 6:00:00 -p interactive --pty bash
- --OR--
-srun -N 1 --ntasks-per-node=24  --mem-per-cpu=32gb -t 12:00:00 -p interactive --pty bash (large batches)
+srun -N 1 --mem=64gb -t 4:00:00 -p interactive --pty bash (large batches)
 module load python3
 cd $HOME/camera-trap-data-pipeline
-SITE=LEC
-SEASON=LEC_S1
+SITE=EFA
+SEASON=EFA_IDI
 ```
 
 Then run the code:
@@ -141,11 +137,11 @@ site and season before running. If necessary, change the job time and requested 
 
 ```
 ssh mangi
-SITE=APN
-SEASON=APN_S2
-cd $HOME/camera-trap-data-pipeline/pre_processing
+SITE=WLD
+SEASON=WLD_S7
+cd $HOME/camera-trap-data-pipeline
 
-sbatch job_basic_cleaning.sh
+sbatch job_basic_cleaning_WLD_S6.sh
 
 ```
 
@@ -186,7 +182,7 @@ cd pyexiftool
 python setup.py install
 
 Before running (only the EXIF script):
-source activate python38
+conda activate python38
 
 ```
 conda activate python388
@@ -213,6 +209,24 @@ python3 -m pre_processing.extract_exif_data \
 |datetime| datetime_exif if available, else datetime_file_creation
 |exif__()| EXIF tag () extracted from the image
 
+For a large dataset, either request more memory resources in the interactive job or run the extract exif script as a batch. 
+
+cd $HOME/camera-trap-data-pipeline/
+SITE=WLD
+SEASON=WLD_S5
+
+INPUT_FILE=/home/packerc/shared/season_captures/${SITE}/inventory/${SEASON}_inventory.csv
+OUTPUT_FILE/home/packerc/shared/season_captures/${SITE}/inventory/${SEASON}_exif_data.csv
+
+conda activate python388
+python3 -m pre_processing.extract_exif_data \
+--inventory /home/packerc/shared/season_captures/${SITE}/inventory/${SEASON}_inventory.csv \
+--update_inventory \
+--output_csv /home/packerc/shared/season_captures/${SITE}/inventory/${SEASON}_exif_data.csv \
+--exiftool_path /home/packerc/shared/programs/Image-ExifTool-11.31/exiftool \
+--log_dir /home/packerc/shared/season_captures/${SITE}/log_files/ \
+--log_filename ${SEASON}_extract_exif_data
+
 
 ## Group Images into Captures
 
@@ -223,8 +237,8 @@ conda deactivate python388
 python3 -m pre_processing.group_inventory_into_captures \
 --inventory /home/packerc/shared/season_captures/${SITE}/inventory/${SEASON}_inventory.csv \
 --output_csv /home/packerc/shared/season_captures/${SITE}/captures/${SEASON}_captures.csv \
---no_older_than_year 2016 \
---no_newer_than_year 2021 \
+--no_older_than_year 2015 \
+--no_newer_than_year 2022 \
 --log_dir /home/packerc/shared/season_captures/${SITE}/log_files/ \
 --log_filename ${SEASON}_group_inventory_into_captures
 ```

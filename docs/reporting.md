@@ -6,13 +6,13 @@ The following codes can be used to:
 2. Create reports from Machine Learning predictions
 3. Create reports for publication on LILA
 
-A report in this context refers to a file (a csv) that contains individual species identifications for the data that was processed throug the entire data pipeline. It does not refer to ecological analyses or analytical products -- it is the basis to create such analyses.
+A report in this context refers to a file (a csv) that contains individual species identifications for the data that was processed through the entire data pipeline. It does not refer to ecological analyses or analytical products -- it is the basis to create such analyses.
 
 The following codes show an example for Grumeti:
 
-For most scripts we use the following ressources (unless indicated otherwise):
+For most scripts we use the following resources (unless indicated otherwise):
 ```
-srun -N 1 --ntasks-per-node=4  --mem-per-cpu=8gb -t 2:00:00 -p interactive --pty bash
+srun -N 1 --mem=16gb -t 2:00:00 -p interactive --pty bash
 module load python3
 cd ~/camera-trap-data-pipeline
 ```
@@ -87,7 +87,7 @@ This report contains everything: blanks, consensus, non-consensus, captures with
 # Create Complete Report
 python3 -m reporting.create_zooniverse_report \
 --season_captures_csv /home/packerc/shared/season_captures/${SITE}/cleaned/${SEASON}_cleaned.csv \
---aggregated_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_date.csv \
+--aggregated_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality.csv \
 --output_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_complete.csv \
 --default_season_id ${SEASON} \
 --log_dir /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/log_files/ \
@@ -164,8 +164,8 @@ python3 -m reporting.create_report_stats \
 ```
 # Create a small sample report
 python3 -m reporting.sample_report \
---report_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_complete.csv \
---output_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_consensus_samples.csv \
+--report_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_report_consensus_survey.csv \
+--output_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_levelup_sample.csv \
 --sample_size 2000 \
 --log_dir /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/log_files/ \
 --log_filename ${SEASON}_sample_report
@@ -183,10 +183,10 @@ python3 -m reporting.sample_report \
 
 # Create statistics file for sample report
 python3 -m reporting.create_report_stats \
---report_path /home/packerc/shared/gold_standard/${SITE}/${SEASON}_GoldStandard_samples.csv \
---output_csv /home/packerc/shared/gold_standard/${SITE}/${SEASON}_GoldStandard_overview.csv \
---log_dir /home/packerc/shared/gold_standard/${SITE}/log_files/ \
---log_filename ${SEASON}_create_report_stats_GS
+--report_path /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_levelup_sample.csv \
+--output_csv /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/${SEASON}_levelup_overview.csv \
+--log_dir /home/packerc/shared/zooniverse/SpeciesReports/${SITE}/log_files/ \
+--log_filename ${SEASON}_create_report_stats_lu
 
 ```
 

@@ -3,7 +3,7 @@
 The following codes can be used to generate predictions for season captures.
 
 ```
-srun -N 1 --ntasks-per-node=4  --mem-per-cpu=16gb -t 2:00:00 -p interactive --pty bash
+srun -N 1 --mem=64gb -t 6:00:00 -p interactive --pty bash
 module load python3
 cd ~/camera-trap-data-pipeline
 ```
@@ -43,8 +43,8 @@ Run / Define the following commands / parameters:
 ssh mangi
 cd $HOME/camera-trap-data-pipeline/machine_learning/jobs/
 
-SITE=SER
-SEASON=SER_S15E
+SITE=WLD
+SEASON=WLD_S6
 
 INPUT_FILE=/home/packerc/shared/zooniverse/MachineLearning/${SITE}/${SEASON}_machine_learning_input.csv
 OUTPUT_FILE_EMPTY=/home/packerc/shared/zooniverse/MachineLearning/${SITE}/${SEASON}_predictions_empty_or_not.json
@@ -77,10 +77,12 @@ NOTE2: To use the faster GPU servers replace the name of the script in the follo
 Generate a csv with all machine learning predictions, one record per capture-id.
 Run this script in sbatch using commands_flatten_ml.sh and job_flatten_ml.sh. Change site and season in commands and resource request in job. 
 
-sbatch job_flatten_ml.sh
+conda activate flatml
+sbatch job_flatten_ml_pred_WLD_S6.sh
 
 ```
 # Create Flattened ML Predictions
+conda activate flatml
 python3 -m machine_learning.flatten_ml_predictions \
 --predictions_empty /home/packerc/shared/zooniverse/MachineLearning/${SITE}/${SEASON}_predictions_empty_or_not.json \
 --predictions_species /home/packerc/shared/zooniverse/MachineLearning/${SITE}/${SEASON}_predictions_species.json \
@@ -90,13 +92,14 @@ python3 -m machine_learning.flatten_ml_predictions \
 ```
 
 This script may require a lot of memory if the .json files are very large. 
-srun -N 1 --ntasks-per-node=12  --mem-per-cpu=16gb -t 6:00:00 -p interactive --pty bash
+srun -N 1 --mem=64gb -t 6:00:00 -p interactive --pty bash
 
 
 ## Reporting of Machine Learning Predictions
 
 The following script merges the season captures with the ml predictions.
 ```
+conda deactivate
 python3 -m reporting.create_ml_report \
 --season_captures_csv /home/packerc/shared/season_captures/${SITE}/cleaned/${SEASON}_cleaned.csv \
 --predictions_csv /home/packerc/shared/zooniverse/MachineLearning/${SITE}/${SEASON}_ml_preds_flat.csv \

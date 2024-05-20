@@ -6,18 +6,18 @@ The following codes can be used to:
 2. Extract Annotations from Classifications / extract Subjects
 
 
-For most scripts we use the following ressources (unless indicated otherwise):
+For most scripts we use the following resources (unless indicated otherwise):
 ```
-srun -N 1 --ntasks-per-node=4  --mem-per-cpu=8gb -t 2:00:00 -p interactive --pty bash
+srun -N 1 --mem=64gb -t 4:00:00 -p interactive --pty bash
 module load python3
 cd ~/camera-trap-data-pipeline
 ```
 
 The following examples were run with the following parameters:
 ```
-SITE=GRU
-SEASON=GRU_S2
-PROJECT_ID=5115
+SITE=WLD
+SEASON=WLD_S5
+PROJECT_ID=593
 ```
 
 ## Get Zooniverse Exports
@@ -45,7 +45,7 @@ python3 -m zooniverse_exports.get_zooniverse_export \
 
 ### Zooniverse Classifications Export
 
-Click on 'Request new classification export' to get the classifications. The structure of a classification is described here: [Zooniverse Classifications](../docs/zooniverse_classification_structure.md).To donwload the classification data from Zooniverse use the following code:
+Click on 'Request new classification export' to get the classifications. The structure of a classification is described here: [Zooniverse Classifications](../docs/zooniverse_classification_structure.md).To download the classification data from Zooniverse use the following code:
 
 ```
 python3 -m zooniverse_exports.get_zooniverse_export \
@@ -89,8 +89,7 @@ The following code extracts the relevant fields of a Zooniverse classification e
 Use a machine with enough memory - for example:
 
 ```
-ssh mangi
-qsub -I -l walltime=2:00:00,nodes=1:ppn=4,mem=16gb
+srun -N 1 --mem=64gb -t 2:00:00 -p interactive --pty bash
 ```
 
 ### Option 1) Filter Classifications by Season-ID (Default)
@@ -102,6 +101,7 @@ python3 -m zooniverse_exports.extract_annotations \
 --classification_csv /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_classifications.csv \
 --output_csv /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_annotations.csv \
 --filter_by_season ${SEASON} \
+--workflow_id $WORKFLOW_ID \
 --log_dir /home/packerc/shared/zooniverse/Exports/${SITE}/log_files/ \
 --log_filename ${SEASON}_extract_annotations
 ```
@@ -139,8 +139,8 @@ INFO:Workflow id: 4655    Workflow version: 363.25     -- counts: 842646
 
 In that case we would choose 'WORKFLOW_ID=4655' and 'WORKFLOW_VERSION_MIN=304.23' since this seems to be the 'real' start of the season with many annotations. Later changes hopefully were only minor.
 
-WORKFLOW_ID=4979
-WORKFLOW_VERSION_MIN=249.2
+WORKFLOW_ID=11459
+WORKFLOW_VERSION_MIN=730.10
 
 ```
 
@@ -161,8 +161,8 @@ python3 -m zooniverse_exports.extract_annotations \
 If is is known when the project went live a start-date can be specified such that no classifications made prior to that date are being extracted. There is also the option to specify an end-date: no classification made past that date will be extracted. It is possible to specify only one of the dates. Note: The dates are compared against UTC time.
 
 ```
-EARLIEST_DATE=2020-11-23
-LAST_DATE=2021-04-10
+EARLIEST_DATE=2021-02-01
+LAST_DATE=2021-07-31
 ```
 
 ```

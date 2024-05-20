@@ -18,15 +18,15 @@ The general aggregation logic (plurality algorithm) is as follows:
 
 For most scripts we use the following resources (unless indicated otherwise):
 ```
-srun -N 1 --ntasks-per-node=4  --mem-per-cpu=8gb -t 2:00:00 -p interactive --pty bash
+srun -N 1 --mem=64gb -t 2:00:00 -p interactive --pty bash
 module load python3
 cd ~/camera-trap-data-pipeline
 ```
 
 The following examples were run with the following parameters:
 ```
-SITE=MTZ
-SEASON=MTZ_S3
+SITE=SER
+SEASON=SER_S14A
 WORKFLOW_ID=4655
 ```
 
@@ -70,10 +70,10 @@ python3 -m aggregations.aggregate_annotations_plurality \
 
 ```
 python3 -m aggregations.aggregate_annotations_plurality \
---annotations /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_annotations_date.csv \
---output_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_raw_date.csv \
+--annotations /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_annotations_survey.csv \
+--output_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_raw_survey.csv \
 --log_dir /home/packerc/shared/zooniverse/Aggregations/${SITE}/log_files/ \
---log_filename ${SEASON}_aggregate_annotations_plurality_date
+--log_filename ${SEASON}_aggregate_annotations_plurality_survey
 ```
 
 ##Add Subject Data to Aggregations
@@ -92,9 +92,9 @@ python3 -m zooniverse_exports.merge_csvs \
 #By workflow only
 
 python3 -m zooniverse_exports.merge_csvs \
---base_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_raw_date.csv \
+--base_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_raw_survey.csv \
 --to_add_csv /home/packerc/shared/zooniverse/Exports/${SITE}/${SEASON}_subjects_extracted.csv \
---output_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_date.csv \
+--output_csv /home/packerc/shared/zooniverse/Aggregations/${SITE}/${SEASON}_aggregated_plurality_survey.csv \
 --key subject_id
 
 ```
